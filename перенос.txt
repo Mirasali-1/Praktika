@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Управление заказами</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Управление заказами</h2>
+
+    <div class="controls">
+      <button onclick="window.location.href='/orders/add'">Добавить заказ</button>
+      <button onclick="window.location.href='/'">Назад</button>
+    </div>
+
+    <table>
+      <tr>
+        <th>Код заказа</th>
+        <th>Покупатель</th>
+        <th>Товары</th>
+        <th>Общая стоимость</th>
+        <th>Статус</th>
+        <th>Сотрудник</th>
+        <th>Действия</th>
+      </tr>
+      {% for order in orders %}
+      <tr>
+        <td>{{ order.Code }}</td>
+        <td>{{ order.buyer.Buyer_name if order.buyer else 'Нет покупателя' }}</td>
+        <td>
+          {% for item in order.items %}
+            {{ item.product.Name_tov if item.product else 'Неизвестный товар' }}
+            ({{ item.quantity }} шт.)<br>
+          {% endfor %}
+        </td>
+        <td>
+          {% set total = [] %}
+          {% for item in order.items %}
+            {% if total.append(item.product.price * item.quantity) %}{% endif %}
+          {% endfor %}
+          {{ total | sum }} руб.
+        </td>
+        <td>
+          <span class="status-{{ order.status|replace(' ', '-')|lower }}">
+            {{ order.status if order.status else 'В обработке' }}
+          </span>
+        </td>
+        <td>{{ order.employee.FIO if order.employee else 'Нет сотрудника' }}</td>
+        <td>
+          <button onclick="window.location.href='/order/{{ order.id_order }}/change'">Изменить</button>
+          <button onclick="window.location.href='/order/{{ order.id_order }}/intel'">Информация</button>
+          <button onclick="window.location.href='/order/{{ order.id_order }}/docx'" class="docx-btn">Скачать DOCX</button>
+          <button onclick="deleteOrder({{ order.id_order }})" class="delete-btn">Удалить</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <script>
+    function deleteOrder(orderId) {
+      if (confirm('Вы уверены, что хотите удалить этот заказ?')) {
+        fetch(`/order/${orderId}/delete`, {
+          method: 'POST',
+        }).then(response => {
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            alert('Ошибка при удалении заказа');
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
